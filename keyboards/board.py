@@ -40,25 +40,15 @@ def action_buttons(keyboard: InlineKeyboardBuilder, game_type: str, game_id: int
     keyboard.adjust(*([8] * 8), 2)
 
 
-def resign_confirm_keyboard(game_type: str, game_id: int):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="✅ Tasdiqlash", callback_data=f"bg:resign_yes:{game_type}:{game_id}")
-    keyboard.button(text="❌ Qaytish", callback_data=f"bg:resign_no:{game_type}:{game_id}")
-    keyboard.adjust(2)
-    return keyboard.as_markup()
-
-
 def chess_square_style(square: chess.Square) -> str:
     file_index = chess.square_file(square)
     rank_index = chess.square_rank(square)
     return "success" if (file_index + rank_index) % 2 else "danger"
 
 
-def chess_square_text(square_name: str, selected: str | None, targets: set[str]) -> str:
+def chess_square_text(square_name: str, selected: str | None) -> str:
     if square_name == selected:
         return "🔸"
-    if square_name in targets:
-        return "🔹"
     return " "
 
 
@@ -79,7 +69,7 @@ def add_chess_square_button(
 ) -> None:
     name = chess.square_name(square)
     keyboard.button(
-        text=chess_square_text(name, selected, targets),
+        text=chess_square_text(name, selected),
         callback_data=callback,
         icon_custom_emoji_id=chess_piece_icon(board, square),
         style=chess_square_style(square),
@@ -117,16 +107,10 @@ def checkers_square_text(
     piece: str | None,
     square: str,
     selected: str | None,
-    targets: set[str],
-    selectable_sources: set[str],
 ) -> str:
     base = CHECKERS_PIECES.get(piece, " ")
     if square == selected:
         return f"🔸{base}"
-    if square in targets:
-        return f"🔹{base}"
-    if square in selectable_sources:
-        return f"🔹{base}"
     return base
 
 
@@ -137,7 +121,6 @@ def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
     all_legal = checkers.legal_moves(board, game.turn, game.forced_square)
     legal = [move for move in all_legal if selected and move["from"] == selected]
     targets = {move["to"] for move in legal}
-    selectable_sources = {move["from"] for move in all_legal} if not selected else set()
 
     for rank in range(7, -1, -1):
         for file_index, file_name in enumerate(checkers.FILES):
@@ -148,7 +131,7 @@ def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
             else:
                 callback = f"bg:sel:checkers:{game.id}:{square}"
             keyboard.button(
-                text=checkers_square_text(piece, square, selected, targets, selectable_sources),
+                text=checkers_square_text(piece, square, selected),
                 callback_data=callback,
                 style=checkers_square_style(file_index, rank),
             )

@@ -36,6 +36,16 @@ async def create_challenge(message: Message):
         await message.answer("Sizda active o'yinlar soni 2 taga yetgan.")
         return
 
+    target = None
+    if message.reply_to_message and message.reply_to_message.from_user:
+        if message.reply_to_message.from_user.is_bot:
+            await message.answer("Bot bilan o'yin yaratib bo'lmaydi.")
+            return
+        if message.reply_to_message.from_user.id == message.from_user.id:
+            await message.answer("O'zingizga qarshi o'ynay olmaysiz.")
+            return
+        target = await get_or_create_user(message.reply_to_message.from_user)
+
     command = (message.text or "").split()[0].lower()
     creator_color = "white" if command == "/chesswhite" else "black"
     challenge_id = token_hex(3)
@@ -44,13 +54,16 @@ async def create_challenge(message: Message):
         "creator_tg_id": creator.user_id,
         "creator_name": user_mention(creator),
         "creator_color": creator_color,
+        "target_tg_id": target.user_id if target else None,
+        "target_name": user_mention(target) if target else None,
         "chat_id": message.chat.id,
         "chat_type": message.chat.type,
     }
 
     color_text = "oq" if creator_color == "white" else "qora"
+    target_text = f"\nRaqib: {user_mention(target)}" if target else ""
     await message.answer(
-        f"{user_mention(creator)} {color_text} rangda o'ynamoqchi.\nO'yin turini tanlang:",
+        f"{user_mention(creator)} {color_text} rangda o'ynamoqchi.{target_text}\nO'yin turini tanlang:",
         reply_markup=challenge_type_keyboard(challenge_id),
     )
 
@@ -90,9 +103,11 @@ async def choose_time(callback: CallbackQuery):
     challenge["time_control"] = minutes
     game_name = "shaxmat" if challenge["game_type"] == "chess" else "shashka"
     color_name = "oq" if challenge["creator_color"] == "white" else "qora"
+    target_text = f"Raqib: {challenge['target_name']}\n" if challenge.get("target_name") else ""
     await callback.message.edit_text(
         f"{challenge['creator_name']} {game_name} o'yiniga chaqiryapti.\n"
         f"Yaratuvchi: {color_name}\n"
+        f"{target_text}"
         f"Vaqt: {minutes}+{increment_for(minutes)}\n\n"
         "Kim o'ynaydi?",
         reply_markup=accept_keyboard(challenge_id),
@@ -124,6 +139,9 @@ async def accept_challenge(callback: CallbackQuery):
         return
     if callback.from_user.id == challenge["creator_tg_id"]:
         await callback.answer("O'zingizga qarshi o'ynay olmaysiz.", show_alert=True)
+        return
+    if challenge.get("target_tg_id") and callback.from_user.id != challenge["target_tg_id"]:
+        await callback.answer("Bu challenge faqat reply qilingan foydalanuvchi uchun.", show_alert=True)
         return
     if callback.from_user.is_bot:
         await callback.answer("Botlar o'yinga kira olmaydi.", show_alert=True)
