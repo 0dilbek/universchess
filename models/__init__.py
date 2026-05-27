@@ -21,6 +21,6 @@ async def init_db():
     ensure_sqlite_parent_dir(Config.DATABASE_URL)
     await Tortoise.init(
         db_url=Config.DATABASE_URL,
-        modules={'models': ['models.user', 'models.game', 'models.board_game']},
+        modules={'models': ['models.user', 'models.board_game']},
     )
     await Tortoise.generate_schemas()
