@@ -109,6 +109,19 @@ def chess_keyboard(game: ChessGame, result_text: str | None = None):
     return keyboard.as_markup()
 
 
+def checkers_square_style(file_index: int, rank: int) -> str:
+    return "success" if (file_index + rank) % 2 else "danger"
+
+
+def checkers_square_text(piece: str | None, square: str, selected: str | None, targets: set[str]) -> str:
+    base = CHECKERS_PIECES.get(piece, " ")
+    if square == selected:
+        return f"🔸{base}"
+    if square in targets:
+        return f"🔹{base}"
+    return base
+
+
 def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
     board = dict(game.board_state)
     keyboard = InlineKeyboardBuilder()
@@ -120,19 +133,15 @@ def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
         for file_index, file_name in enumerate(checkers.FILES):
             square = f"{file_name}{checkers.RANKS[rank]}"
             piece = board.get(square)
-            base = CHECKERS_PIECES.get(piece, "▫️" if (file_index + rank) % 2 else "▪️")
-            if square == selected:
-                text = f"🔸{base}"
-            elif square in targets:
-                text = f"🔹{base}"
-            else:
-                text = base
-
             if selected and square in targets:
                 callback = f"bg:move:checkers:{game.id}:{selected}:{square}"
             else:
                 callback = f"bg:sel:checkers:{game.id}:{square}"
-            keyboard.button(text=text, callback_data=callback)
+            keyboard.button(
+                text=checkers_square_text(piece, square, selected, targets),
+                callback_data=callback,
+                style=checkers_square_style(file_index, rank),
+            )
     action_buttons(keyboard, "checkers", game.id, game, result_text)
     return keyboard.as_markup()
 
