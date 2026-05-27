@@ -113,11 +113,19 @@ def checkers_square_style(file_index: int, rank: int) -> str:
     return "success" if (file_index + rank) % 2 else "danger"
 
 
-def checkers_square_text(piece: str | None, square: str, selected: str | None, targets: set[str]) -> str:
+def checkers_square_text(
+    piece: str | None,
+    square: str,
+    selected: str | None,
+    targets: set[str],
+    selectable_sources: set[str],
+) -> str:
     base = CHECKERS_PIECES.get(piece, " ")
     if square == selected:
         return f"🔸{base}"
     if square in targets:
+        return f"🔹{base}"
+    if square in selectable_sources:
         return f"🔹{base}"
     return base
 
@@ -126,8 +134,10 @@ def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
     board = dict(game.board_state)
     keyboard = InlineKeyboardBuilder()
     selected = game.selected_square
-    legal = checkers.legal_moves_for_square(board, game.turn, selected, game.forced_square) if selected else []
+    all_legal = checkers.legal_moves(board, game.turn, game.forced_square)
+    legal = [move for move in all_legal if selected and move["from"] == selected]
     targets = {move["to"] for move in legal}
+    selectable_sources = {move["from"] for move in all_legal} if not selected else set()
 
     for rank in range(7, -1, -1):
         for file_index, file_name in enumerate(checkers.FILES):
@@ -138,7 +148,7 @@ def checkers_keyboard(game: CheckersGame, result_text: str | None = None):
             else:
                 callback = f"bg:sel:checkers:{game.id}:{square}"
             keyboard.button(
-                text=checkers_square_text(piece, square, selected, targets),
+                text=checkers_square_text(piece, square, selected, targets, selectable_sources),
                 callback_data=callback,
                 style=checkers_square_style(file_index, rank),
             )

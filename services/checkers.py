@@ -34,14 +34,16 @@ def coords_to_square(file_index: int, rank_index: int) -> str | None:
 
 
 def move_dirs(piece: str, captures: bool = False) -> list[tuple[int, int]]:
+    if captures:
+        dirs = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
+        return [(df * 2, dr * 2) for df, dr in dirs]
+
     if is_king(piece):
         dirs = [(1, 1), (-1, 1), (1, -1), (-1, -1)]
     elif color_of(piece) == "white":
         dirs = [(1, 1), (-1, 1)]
     else:
         dirs = [(1, -1), (-1, -1)]
-    if captures:
-        return [(df * 2, dr * 2) for df, dr in dirs]
     return dirs
 
 
