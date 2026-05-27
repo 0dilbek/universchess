@@ -42,4 +42,5 @@ async def profile_handler(message: Message):
         f"""<tg-emoji emoji-id="5251332925135283922">⭐️</tg-emoji> Reyting: {chess_profile.rating}\n"""
         f"""<tg-emoji emoji-id="5210768496622840660">🎮</tg-emoji> O'yinlar: {chess_profile.games_count}""",
         reply_markup=profile_keyboard(),
+        parse_mode="HTML",
     )
