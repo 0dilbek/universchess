@@ -46,3 +46,7 @@ async def edit_message_text(message, *args, **kwargs) -> Any:
 
 async def edit_message_reply_markup(message, *args, **kwargs) -> Any:
     return await retry_telegram(message.edit_reply_markup, *args, **kwargs)
+
+
+async def edit_bot_message_text(bot, *args, **kwargs) -> Any:
+    return await retry_telegram(bot.edit_message_text, *args, **kwargs)

@@ -6,7 +6,7 @@ from config import ShaxmatEmojies
 from models.board_game import CheckersGame, ChessGame
 from services import checkers
 from services.telegram_safe import edit_message_text
-from services.time_control import clock_text
+from services.time_control import clock_text, current_time_left
 from services.users import user_mention
 
 CHESS_PIECES = {
@@ -145,8 +145,8 @@ def status_line(game) -> str:
     black = user_mention(game.black_player)
     turn = "Oq" if game.turn == "white" else "Qora"
     return (
-        f"⚪ {white}  {clock_text(game.white_time_left)}\n"
-        f"⚫ {black}  {clock_text(game.black_time_left)}\n"
+        f"⚪ {white}  {clock_text(current_time_left(game, 'white'))}\n"
+        f"⚫ {black}  {clock_text(current_time_left(game, 'black'))}\n"
         f"Navbat: {turn}"
     )
 
@@ -162,3 +162,7 @@ async def render_game_message(callback: CallbackQuery, game_type: str, game, res
     if result_text:
         text = f"{text}\n\n{result_text}"
     await edit_message_text(callback.message, text, reply_markup=markup)
+
+
+def game_markup(game_type: str, game, result_text: str | None = None):
+    return chess_keyboard(game, result_text) if game_type == "chess" else checkers_keyboard(game, result_text)

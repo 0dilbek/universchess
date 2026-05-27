@@ -1,4 +1,5 @@
-from asyncio import run
+from asyncio import CancelledError, create_task, run
+from contextlib import suppress
 from logging import INFO, basicConfig
 
 from aiogram import Bot, Dispatcher
@@ -6,6 +7,7 @@ from aiogram.types import BotCommand
 from config import Config
 from handlers.board_games import router as board_games_router
 from models import init_db
+from services.game_watchdog import run_time_watchdog
 
 basicConfig(level=INFO)
 
@@ -33,7 +35,13 @@ async def main():
 
     dp = Dispatcher()
     dp.include_router(board_games_router)
-    await dp.start_polling(bot)
+    watchdog_task = create_task(run_time_watchdog(bot))
+    try:
+        await dp.start_polling(bot)
+    finally:
+        watchdog_task.cancel()
+        with suppress(CancelledError):
+            await watchdog_task
 
 
 if __name__ == "__main__":
