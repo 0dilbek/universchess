@@ -32,14 +32,14 @@ async def profile_handler(message: Message):
 
     await answer_message(
         message,
-        f"👤 {user_mention(user)}\n\n"
-        f"<tg-emoji emoji-id="5215239948420003628">💵</tg-emoji> Dollar: {profile.dollar}\n"
-        f"<tg-emoji emoji-id="5229173741451230931">💎</tg-emoji> Olmos: {profile.diamond}\n\n"
-        f"<tg-emoji emoji-id="5287722392032919843">💰</tg-emoji> Winrate: {percent(chess_profile.wins, chess_profile.games_count)}\n"
-        f"<tg-emoji emoji-id="5323386314400211783">✅</tg-emoji> G'alabalar: {chess_profile.wins}\n"
-        f"<tg-emoji emoji-id="5332517603850074848">🤝</tg-emoji> Duranglar: {chess_profile.draws}\n"
-        f"<tg-emoji emoji-id="5460936902662168397">💜</tg-emoji> Mag'lubiyatlar: {chess_profile.losses}\n\n"
-        f"<tg-emoji emoji-id="5251332925135283922">⭐️</tg-emoji> Reyting: {chess_profile.rating}\n"
-        f"<tg-emoji emoji-id="5210768496622840660">🎮</tg-emoji> O'yinlar: {chess_profile.games_count}",
+        f"""👤 {user_mention(user)}\n\n"""
+        f"""<tg-emoji emoji-id="5215239948420003628">💵</tg-emoji> Dollar: {profile.dollar}\n"""
+        f"""<tg-emoji emoji-id="5229173741451230931">💎</tg-emoji> Olmos: {profile.diamond}\n\n"""
+        f"""<tg-emoji emoji-id="5287722392032919843">💰</tg-emoji> Winrate: {percent(chess_profile.wins, chess_profile.games_count)}\n"""
+        f"""<tg-emoji emoji-id="5323386314400211783">✅</tg-emoji> G'alabalar: {chess_profile.wins}\n"""
+        f"""<tg-emoji emoji-id="5332517603850074848">🤝</tg-emoji> Duranglar: {chess_profile.draws}\n"""
+        f"""<tg-emoji emoji-id="5460936902662168397">💜</tg-emoji> Mag'lubiyatlar: {chess_profile.losses}\n\n"""
+        f"""<tg-emoji emoji-id="5251332925135283922">⭐️</tg-emoji> Reyting: {chess_profile.rating}\n"""
+        f"""<tg-emoji emoji-id="5210768496622840660">🎮</tg-emoji> O'yinlar: {chess_profile.games_count}""",
         reply_markup=profile_keyboard(),
     )
