@@ -1,0 +1,5 @@
+aiogram==3.28.2
+aiosqlite==0.22.1
+python-chess==1.999
+python-dotenv==1.2.2
+tortoise-orm==1.1.7

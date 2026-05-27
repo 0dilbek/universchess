@@ -1,0 +1,2 @@
+ACTIVE_STATUSES = ["active"]
+TIME_OPTIONS = (10, 15, 30, 60)
