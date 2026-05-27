@@ -4,6 +4,7 @@ from aiogram.types import Message
 
 from models.board_game import ChessProfile
 from models.user import Profile
+from services.telegram_safe import answer_message
 from services.users import get_or_create_user, user_mention
 
 router = Router()
@@ -21,7 +22,8 @@ async def profile_handler(message: Message):
     profile = await Profile.get(user=user)
     chess_profile = await ChessProfile.get(user=user)
 
-    await message.answer(
+    await answer_message(
+        message,
         f"👤 {user_mention(user)}\n\n"
         f"💵 Dollar: {profile.dollar}\n"
         f"💎 Olmos: {profile.diamond}\n\n"

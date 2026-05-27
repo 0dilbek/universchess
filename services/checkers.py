@@ -47,6 +47,10 @@ def move_dirs(piece: str, captures: bool = False) -> list[tuple[int, int]]:
     return dirs
 
 
+def diagonal_dirs() -> list[tuple[int, int]]:
+    return [(1, 1), (-1, 1), (1, -1), (-1, -1)]
+
+
 def pieces_for(board: dict[str, str], color: str) -> list[str]:
     return [square for square, piece in board.items() if color_of(piece) == color]
 
@@ -58,6 +62,25 @@ def captures_from(board: dict[str, str], square: str) -> list[dict]:
 
     file_index, rank_index = square_to_coords(square)
     moves = []
+    if is_king(piece):
+        for df, dr in diagonal_dirs():
+            seen_enemy = None
+            step = 1
+            while True:
+                current = coords_to_square(file_index + df * step, rank_index + dr * step)
+                if not current:
+                    break
+
+                current_piece = board.get(current)
+                if current_piece:
+                    if color_of(current_piece) == color_of(piece) or seen_enemy:
+                        break
+                    seen_enemy = current
+                elif seen_enemy:
+                    moves.append({"from": square, "to": current, "captured": [seen_enemy]})
+                step += 1
+        return moves
+
     for df, dr in move_dirs(piece, captures=True):
         mid = coords_to_square(file_index + df // 2, rank_index + dr // 2)
         target = coords_to_square(file_index + df, rank_index + dr)
@@ -76,6 +99,17 @@ def simple_moves_from(board: dict[str, str], square: str) -> list[dict]:
 
     file_index, rank_index = square_to_coords(square)
     moves = []
+    if is_king(piece):
+        for df, dr in diagonal_dirs():
+            step = 1
+            while True:
+                target = coords_to_square(file_index + df * step, rank_index + dr * step)
+                if not target or target in board:
+                    break
+                moves.append({"from": square, "to": target, "captured": []})
+                step += 1
+        return moves
+
     for df, dr in move_dirs(piece):
         target = coords_to_square(file_index + df, rank_index + dr)
         if target and target not in board:

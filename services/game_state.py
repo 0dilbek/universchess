@@ -1,5 +1,6 @@
 from models.board_game import CheckersGame, CheckersMove, CheckersProfile, ChessGame, ChessMove, ChessProfile
 from models.user import Profile
+from services.game_runtime import forget_game, remember_game
 from services.rating import draw_ratings, reward_for, win_loss_ratings
 from services.time_control import utc_now
 
@@ -22,7 +23,9 @@ def color_for_user(game, user_id: int) -> str | None:
 
 async def load_game(game_type: str, game_id: int):
     model = ChessGame if game_type == "chess" else CheckersGame
-    return await model.get(id=game_id).prefetch_related("white_player", "black_player", "winner", "draw_offered_by")
+    game = await model.get(id=game_id).prefetch_related("white_player", "black_player", "winner", "draw_offered_by")
+    remember_game(game_type, game)
+    return game
 
 
 async def finish_game(game_type: str, game, winner_color: str | None, reason: str):
@@ -68,6 +71,7 @@ async def finish_game(game_type: str, game, winner_color: str | None, reason: st
     await white_profile.save()
     await black_profile.save()
     await game.save()
+    forget_game(game_type, game.id)
 
 
 def result_button_text(game) -> str:
