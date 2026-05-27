@@ -22,7 +22,22 @@ async def answer_message(message, *args, **kwargs) -> Any:
 
 
 async def answer_callback(callback, *args, **kwargs) -> Any:
-    return await retry_telegram(callback.answer, *args, **kwargs)
+    try:
+        return await callback.answer(*args, **kwargs)
+    except TelegramRetryAfter as exc:
+        await sleep(float(exc.retry_after) + 0.5)
+        try:
+            return await callback.answer(*args, **kwargs)
+        except TelegramBadRequest as exc:
+            message = str(exc).lower()
+            if "query is too old" in message or "query id is invalid" in message or "response timeout expired" in message:
+                return None
+            raise
+    except TelegramBadRequest as exc:
+        message = str(exc).lower()
+        if "query is too old" in message or "query id is invalid" in message or "response timeout expired" in message:
+            return None
+        raise
 
 
 async def edit_message_text(message, *args, **kwargs) -> Any:
