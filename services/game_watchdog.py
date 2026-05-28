@@ -43,7 +43,7 @@ async def safe_check_game(bot: Bot, game_type: str, game_id: int) -> None:
 async def check_game(bot: Bot, game_type: str, game_id: int) -> None:
     async with locked_game(game_type, int(game_id)):
         game = await load_game(game_type, int(game_id))
-        if game.status != "active" or not game.message_id:
+        if game.status != "active" or (not game.message_id and not game.inline_message_id):
             return
 
         now = utc_now()
@@ -69,10 +69,10 @@ async def check_game(bot: Bot, game_type: str, game_id: int) -> None:
         text = game_text(game_type, game)
         if result_text:
             text = f"{text}\n\n{result_text}"
-        await edit_bot_message_text(
-            bot,
-            chat_id=game.chat_id,
-            message_id=game.message_id,
-            text=text,
-            reply_markup=game_markup(game_type, game, result_text),
-        )
+        edit_kwargs = {"text": text, "reply_markup": game_markup(game_type, game, result_text)}
+        if game.inline_message_id:
+            edit_kwargs["inline_message_id"] = game.inline_message_id
+        else:
+            edit_kwargs["chat_id"] = game.chat_id
+            edit_kwargs["message_id"] = game.message_id
+        await edit_bot_message_text(bot, **edit_kwargs)

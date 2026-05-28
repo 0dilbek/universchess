@@ -5,7 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from config import ShaxmatEmojies
 from models.board_game import CheckersGame, ChessGame
 from services import checkers
-from services.telegram_safe import edit_message_text
+from services.telegram_safe import edit_bot_message_text, edit_message_text
 from services.time_control import clock_text, current_time_left
 from services.users import user_mention
 
@@ -161,7 +161,15 @@ async def render_game_message(callback: CallbackQuery, game_type: str, game, res
     text = game_text(game_type, game)
     if result_text:
         text = f"{text}\n\n{result_text}"
-    await edit_message_text(callback.message, text, reply_markup=markup)
+    if callback.inline_message_id:
+        await edit_bot_message_text(
+            callback.bot,
+            inline_message_id=callback.inline_message_id,
+            text=text,
+            reply_markup=markup,
+        )
+    else:
+        await edit_message_text(callback.message, text, reply_markup=markup)
 
 
 def game_markup(game_type: str, game, result_text: str | None = None):

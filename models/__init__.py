@@ -24,3 +24,19 @@ async def init_db():
         modules={'models': ['models.user', 'models.board_game']},
     )
     await Tortoise.generate_schemas()
+    await ensure_inline_message_columns()
+
+
+async def ensure_inline_message_columns() -> None:
+    if not Config.DATABASE_URL.startswith("sqlite://"):
+        return
+
+    connection = Tortoise.get_connection("default")
+    for table in ("chessgame", "checkersgame"):
+        try:
+            await connection.execute_script(
+                f'ALTER TABLE "{table}" ADD COLUMN "inline_message_id" VARCHAR(255);'
+            )
+        except Exception as exc:
+            if "duplicate column" not in str(exc).lower():
+                raise

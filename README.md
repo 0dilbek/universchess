@@ -6,28 +6,28 @@ Univers Chess Bot - Telegram guruhlarida ikki odam o'rtasida shaxmat va shashka 
 
 Bot foydalanuvchilarga:
 
-- guruhda do'stini shaxmat yoki shashkaga chaqirish;
+- inline mode orqali istalgan chatda do'stini shaxmat yoki shashkaga chaqirish;
 - yaratuvchi rangini oldindan tanlash;
-- o'yin turini yaratish paytida tanlash;
+- o'yin turini va vaqt limitini xabarning o'zida tanlash;
 - real shaxmat va shashka qoidalari bo'yicha yurish;
 - o'yin natijasiga qarab dollar mukofoti olish;
 - shaxmat va shashka statistikasi hamda reytingini yig'ish imkonini beradi.
 
 Kompyuter bilan o'ynash rejimi bo'lmaydi. Har bir o'yin faqat 2 ta Telegram foydalanuvchisi orasida bo'ladi.
 
-Boshlang'ich versiyada o'yin faqat guruh ichida boshlanadi va davom etadi. Bot lichkasida o'yin boshlash keyingi feature sifatida qoldiriladi.
+O'yin endi slash komandalar bilan emas, Telegram inline mode orqali boshlanadi. Foydalanuvchi istalgan chat inputida bot username'ini yozadi va bot 2 ta inline variant qaytaradi:
 
-O'yinni yaratish komandasi rangni belgilaydi:
+- `Oq bo'lib boshlash` - yaratuvchi oq rangda o'ynaydi;
+- `Qora bo'lib boshlash` - yaratuvchi qora rangda o'ynaydi.
 
-- `/chesswhite` - yaratuvchi oq rangda o'ynaydi;
-- `/chessblack` - yaratuvchi qora rangda o'ynaydi.
-
-Komanda bosilgandan keyin yaratuvchi o'yin turini tanlaydi:
+Variant tanlangandan keyin Telegram chatga bot xabarini joylaydi. Qolgan jarayon shu xabarning inline keyboardida davom etadi: yaratuvchi o'yin turini tanlaydi:
 
 - shaxmat;
 - shashka.
 
-`/chessbalck` kabi keng uchraydigan typo keyin alias sifatida qo'llab-quvvatlanishi mumkin, lekin asosiy komanda `/chessblack` bo'ladi.
+Keyin vaqt limiti tanlanadi va raqib `Qabul qilish` tugmasi bilan o'yinga kiradi. Shu yondashuv guruhlarda slash command xabarlarini kamaytiradi va Telegram limitlariga tez tushib qolish xavfini pasaytiradi. Inline xabarlar private chatlarda ham ishlaydi, shuning uchun ikki foydalanuvchi shaxsiy chatda ham o'ynashi mumkin.
+
+BotFather'da bot uchun inline mode yoqilgan bo'lishi kerak.
 
 ## Mavjud Mafia Modellari
 
@@ -88,8 +88,9 @@ Kerakli maydonlar:
 - `black_player` - qora dona egasi.
 - `winner` - g'olib foydalanuvchi, durang yoki bekor qilingan o'yinda `null`.
 - `chat_id` - o'yin qaysi chatda boshlangan.
-- `chat_type` - `private`, `group` yoki `supergroup`.
-- `message_id` - board turgan Telegram xabar IDsi.
+- `chat_type` - `inline`, `private`, `group` yoki `supergroup`.
+- `message_id` - oddiy bot xabari bo'lsa board turgan Telegram xabar IDsi.
+- `inline_message_id` - inline mode orqali yuborilgan board xabar IDsi.
 - `fen` - boardning hozirgi holati.
 - `status` - `pending`, `active`, `white_won`, `black_won`, `draw`, `cancelled`, `resigned`.
 - `turn` - hozir kim yurishi kerak.
@@ -117,6 +118,7 @@ Kerakli maydonlar `ChessGame`ga o'xshash bo'ladi:
 - `chat_id`.
 - `chat_type`.
 - `message_id`.
+- `inline_message_id`.
 - `board_state` - shashka boardining hozirgi holati.
 - `status` - `pending`, `active`, `white_won`, `black_won`, `draw`, `cancelled`, `resigned`.
 - `turn`.
@@ -166,36 +168,24 @@ Kerakli maydonlar:
 
 ## O'yin Flow
 
-### Guruhda O'yin Boshlash
+### Inline Mode Orqali O'yin Boshlash
 
-1. Foydalanuvchi guruhda `/chesswhite` yoki `/chessblack` yozadi.
-2. Bot o'yin turini tanlash uchun tugmalar chiqaradi: `Shaxmat`, `Shashka`.
-3. Yaratuvchi o'yin turini tanlaydi.
-4. Bot vaqt limitini tanlash uchun tugmalar chiqaradi: `10`, `15`, `30`, `60`.
-5. Yaratuvchi vaqt limitini tanlaydi.
-6. Bot challenge xabarini chiqaradi.
-7. Ikkinchi foydalanuvchi `Qabul qilish` tugmasini bosadi.
-8. Rang komanda orqali aniqlanadi:
-   - `/chesswhite` bo'lsa yaratuvchi oq, qabul qilgan odam qora;
-   - `/chessblack` bo'lsa yaratuvchi qora, qabul qilgan odam oq.
-9. Tanlangan turga qarab `ChessGame` yoki `CheckersGame` yaratiladi.
-10. Bot inline keyboard orqali boardni yuboradi.
-11. Guruhdagi board doim bitta xabarda qoladi, har yurishda shu xabar edit qilinadi.
+1. Foydalanuvchi istalgan Telegram chat inputida bot username'ini yozadi.
+2. Bot inline queryga 2 ta result qaytaradi: `Oq bo'lib boshlash` va `Qora bo'lib boshlash`.
+3. Foydalanuvchi bitta resultni tanlaydi va Telegram tanlangan resultni chatga xabar sifatida joylaydi.
+4. Joylangan xabarda yaratuvchi `Shaxmat` yoki `Shashka`ni tanlaydi.
+5. Bot shu xabarni edit qilib vaqt limitlarini chiqaradi: `10`, `15`, `30`, `60`.
+6. Yaratuvchi vaqt limitini tanlaydi.
+7. Bot shu xabarni challenge holatiga edit qiladi.
+8. Ikkinchi foydalanuvchi `Qabul qilish` tugmasini bosadi.
+9. Tanlangan rangga qarab oq va qora o'yinchilar aniqlanadi.
+10. Tanlangan turga qarab `ChessGame` yoki `CheckersGame` yaratiladi.
+11. Board doim bitta inline xabarda qoladi, har yurishda shu xabar edit qilinadi.
 12. Board ostida action tugmalar turadi: taslim bo'lish va durang taklif qilish.
 
-### Lichkada O'yin Boshlash
+Inline xabarlarda Telegram callbacklari `chat_id/message_id` o'rniga `inline_message_id` beradi. Shu sabab `ChessGame` va `CheckersGame` modellarida `inline_message_id` maydoni bor. Inline o'yinlarda `chat_id=0`, `chat_type=inline`, `message_id=null` bo'ladi; oddiy bot xabari orqali yaratilgan eski o'yinlarda esa `chat_id/message_id` ishlatiladi.
 
-Lichkada o'yin boshlash hozircha implementatsiya qilinmaydi. Bu keyingi feature sifatida qoldiriladi.
-
-Kelajakdagi reja:
-
-1. Foydalanuvchi bot lichkasida o'yin yaratadi.
-2. Bot invite link yoki challenge kod beradi.
-3. Foydalanuvchi shu link/kodni do'stiga yuboradi.
-4. Do'sti bot lichkasiga kirib challenge'ni qabul qiladi.
-5. O'yin oxirigacha lichkada davom etadi.
-
-Lichka feature qo'shilganda guruh va lichka o'yinlari `chat_id` va `chat_type` orqali ajratiladi.
+`/chesswhite`, `/chessblack` va `/chessbalck` komandalaridan yangi challenge yaratilmaydi. Ular foydalanuvchini inline mode orqali boshlashga yo'naltiradi.
 
 ### Yurish Qilish
 
@@ -411,37 +401,32 @@ Shashka uchun mos tayyor kutubxona topilsa ishlatiladi. Agar loyiha talabiga mos
 5. `python-chess`ni dependency sifatida qo'shish.
 6. Shashka qoidalari uchun service yoki kutubxona tanlash.
 7. Board render funksiyalarini yozish.
-8. `/chesswhite` va `/chessblack` komandalarini yozish.
-9. O'yin turi tanlash flowini yozish.
-10. Vaqt limiti tanlash flowini yozish.
-11. Guruh uchun challenge/accept flow yozish.
-12. Yurish tanlash va legal move flow yozish.
-13. Board ostidagi taslim bo'lish va durang taklif qilish tugmalarini yozish.
-14. Durang taklifiga raqib `true/false` javob beradigan flow yozish.
-15. Vaqt hisoblash va timeout flowini yozish.
-16. Game over holatlarini qayta ishlash.
-17. ChessProfile va CheckersProfile statistikalarini yangilash.
-18. Asosiy `Profile.dollar` hisobiga mukofot qo'shish.
-19. Reyting formulasini ulash.
-20. Leaderboard va profil komandalarini qo'shish.
-21. Lichkada o'yin boshlashni keyingi feature sifatida alohida rejalashtirish.
+8. Inline query handlerini yozish.
+9. Inline resultlarda oq/qora bo'lib boshlash variantlarini qaytarish.
+10. O'yin turi tanlash flowini yozish.
+11. Vaqt limiti tanlash flowini yozish.
+12. Inline xabar uchun challenge/accept flow yozish.
+13. Yurish tanlash va legal move flow yozish.
+14. Board ostidagi taslim bo'lish va durang taklif qilish tugmalarini yozish.
+15. Durang taklifiga raqib `true/false` javob beradigan flow yozish.
+16. Vaqt hisoblash va timeout flowini yozish.
+17. Game over holatlarini qayta ishlash.
+18. ChessProfile va CheckersProfile statistikalarini yangilash.
+19. Asosiy `Profile.dollar` hisobiga mukofot qo'shish.
+20. Reyting formulasini ulash.
+21. Leaderboard va profil komandalarini qo'shish.
 
 ## Komandalar
 
-Boshlang'ich komandalar:
+Bot komandalar:
 
 - `/start` - bot haqida qisqa xabar.
-- `/chesswhite` - yaratuvchi oq bo'ladigan yangi challenge yaratish.
-- `/chessblack` - yaratuvchi qora bo'ladigan yangi challenge yaratish.
-- `/chess_profile` - shaxmat profili.
-- `/chess_top` - reyting bo'yicha top.
-- `/checkers_profile` - shashka profili.
-- `/checkers_top` - shashka reytingi bo'yicha top.
-- `/chess_help` - qisqa yordam.
+- `/profile` - profil va shaxmat/shashka statistikasi.
+- `/top` - reyting bo'yicha TOP.
 
-Keyinroq qo'shilishi mumkin:
+Legacy komandalar:
 
-- `/history` - oxirgi o'yinlar.
+- `/chesswhite`, `/chessblack`, `/chessbalck` - yangi challenge yaratmaydi, foydalanuvchini inline mode orqali boshlashga yo'naltiradi.
 
 ## Muhim Qoidalar
 
@@ -456,15 +441,14 @@ Keyinroq qo'shilishi mumkin:
 - Bir foydalanuvchi bir vaqtning o'zida umumiy hisobda maksimal 2 ta active o'yinda qatnasha oladi.
 - Durangda dollar mukofoti berilmaydi.
 - O'yin boshida vaqt limiti majburiy tanlanadi.
-- Guruhdagi board doim bitta xabarda qoladi.
+- Board doim bitta inline xabarda qoladi.
 - Taslim bo'lish va durang taklif qilish command orqali emas, board ostidagi tugmalar orqali ishlaydi.
 - Durang taklifiga faqat raqib javob bera oladi.
-- Lichkada o'yin boshlash hozircha implementatsiya qilinmaydi.
+- Inline mode yoqilgan bo'lishi shart.
 
 ## Keyingi Qarorlar
 
 Quyidagi narsalar keyinroq aniqlanadi:
 
-- lichkada do'stni chaqirish invite link orqali bo'ladimi yoki qisqa challenge kod orqali bo'ladimi;
 - shashka uchun qaysi qoida varianti ishlatiladi;
 - vaqt increment qiymatlari hozirgi taklifda qoladimi yoki sozlanadimi.

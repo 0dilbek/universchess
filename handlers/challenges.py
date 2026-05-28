@@ -3,14 +3,14 @@ from secrets import token_hex
 import chess
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message
 
 from keyboards.board import checkers_keyboard, chess_keyboard, game_text
 from keyboards.challenge import accept_keyboard, challenge_time_keyboard, challenge_type_keyboard
 from models.board_game import CheckersGame, ChessGame
 from models.user import User
 from services import checkers
-from services.telegram_safe import answer_callback, answer_message, edit_message_text
+from services.telegram_safe import answer_callback, answer_message, edit_bot_message_text, edit_message_text
 from services.time_control import increment_for, initial_seconds, utc_now
 from services.users import active_games_count, get_or_create_user, user_mention
 
@@ -18,56 +18,103 @@ router = Router()
 PENDING_CHALLENGES: dict[str, dict] = {}
 
 
-@router.message(Command("start"))
-async def start_handler(message: Message):
-    await answer_message(
-        message,
-        "Univers Chess.\n\n"
-        "Guruhda /chesswhite yoki /chessblack yozing, keyin shaxmat yoki shashkani tanlang."
-    )
-
-
-@router.message(Command("chesswhite", "chessblack", "chessbalck"))
-async def create_challenge(message: Message):
-    if message.chat.type == "private":
-        await answer_message(message, "Lichkada o'yin boshlash keyingi feature. Hozircha guruhda ishlaydi.")
-        return
-
-    creator = await get_or_create_user(message.from_user)
-    if await active_games_count(creator) >= 2:
-        await answer_message(message, "Sizda active o'yinlar soni 2 taga yetgan.")
-        return
-
-    target = None
-    if message.reply_to_message and message.reply_to_message.from_user:
-        if message.reply_to_message.from_user.is_bot:
-            await answer_message(message, "Bot bilan o'yin yaratib bo'lmaydi.")
-            return
-        if message.reply_to_message.from_user.id == message.from_user.id:
-            await answer_message(message, "O'zingizga qarshi o'ynay olmaysiz.")
-            return
-        target = await get_or_create_user(message.reply_to_message.from_user)
-
-    command = (message.text or "").split()[0].lower()
-    creator_color = "white" if command == "/chesswhite" else "black"
+def create_pending_challenge(creator: User, creator_color: str, chat_id: int, chat_type: str) -> str:
     challenge_id = token_hex(3)
     PENDING_CHALLENGES[challenge_id] = {
         "creator_id": creator.id,
         "creator_tg_id": creator.user_id,
         "creator_name": user_mention(creator),
         "creator_color": creator_color,
-        "target_tg_id": target.user_id if target else None,
-        "target_name": user_mention(target) if target else None,
-        "chat_id": message.chat.id,
-        "chat_type": message.chat.type,
+        "target_tg_id": None,
+        "target_name": None,
+        "chat_id": chat_id,
+        "chat_type": chat_type,
     }
+    return challenge_id
 
+
+def inline_challenge_text(creator: User, creator_color: str) -> str:
     color_text = "oq" if creator_color == "white" else "qora"
-    target_text = f"\nRaqib: {user_mention(target)}" if target else ""
+    return f"{user_mention(creator)} {color_text} rangda o'ynamoqchi.\nO'yin turini tanlang:"
+
+
+async def edit_challenge_message(callback: CallbackQuery, text: str, reply_markup=None):
+    if callback.inline_message_id:
+        await edit_bot_message_text(
+            callback.bot,
+            inline_message_id=callback.inline_message_id,
+            text=text,
+            reply_markup=reply_markup,
+        )
+        return
+    await edit_message_text(callback.message, text, reply_markup=reply_markup)
+
+
+@router.message(Command("start"))
+async def start_handler(message: Message):
     await answer_message(
         message,
-        f"{user_mention(creator)} {color_text} rangda o'ynamoqchi.{target_text}\nO'yin turini tanlang:",
-        reply_markup=challenge_type_keyboard(challenge_id),
+        "Univers Chess.\n\n"
+        "O'yinni inline mode orqali boshlang: istalgan chatda bot username'ini yozing va "
+        "oq yoki qora rangni tanlang. Keyin xabarning o'zida shaxmat yoki shashka tanlanadi."
+    )
+
+
+@router.message(Command("chesswhite", "chessblack", "chessbalck"))
+async def create_challenge(message: Message):
+    await answer_message(
+        message,
+        "Endi o'yin inline mode orqali boshlanadi. Chat inputiga bot username'ini yozing, "
+        "keyin oq yoki qora bo'lib boshlash variantini tanlang."
+    )
+    return
+
+
+@router.inline_query()
+async def inline_challenge(inline_query: InlineQuery):
+    creator = await get_or_create_user(inline_query.from_user)
+    if await active_games_count(creator) >= 2:
+        await inline_query.answer(
+            [
+                InlineQueryResultArticle(
+                    id="limit",
+                    title="Active o'yinlar limiti to'lgan",
+                    description="Yangi o'yin boshlash uchun oldingi active o'yinlardan birini tugating.",
+                    input_message_content=InputTextMessageContent(
+                        message_text="Sizda active o'yinlar soni 2 taga yetgan."
+                    ),
+                )
+            ],
+            cache_time=0,
+            is_personal=True,
+        )
+        return
+
+    white_challenge_id = create_pending_challenge(creator, "white", 0, "inline")
+    black_challenge_id = create_pending_challenge(creator, "black", 0, "inline")
+    await inline_query.answer(
+        [
+            InlineQueryResultArticle(
+                id=white_challenge_id,
+                title="Oq bo'lib boshlash",
+                description="Raqib qora rangda o'ynaydi.",
+                input_message_content=InputTextMessageContent(
+                    message_text=inline_challenge_text(creator, "white")
+                ),
+                reply_markup=challenge_type_keyboard(white_challenge_id),
+            ),
+            InlineQueryResultArticle(
+                id=black_challenge_id,
+                title="Qora bo'lib boshlash",
+                description="Raqib oq rangda o'ynaydi.",
+                input_message_content=InputTextMessageContent(
+                    message_text=inline_challenge_text(creator, "black")
+                ),
+                reply_markup=challenge_type_keyboard(black_challenge_id),
+            ),
+        ],
+        cache_time=0,
+        is_personal=True,
     )
 
 
@@ -82,10 +129,12 @@ async def choose_game_type(callback: CallbackQuery):
         await answer_callback(callback, "O'yin turini faqat yaratuvchi tanlaydi.", show_alert=True)
         return
 
+    if callback.inline_message_id:
+        challenge["inline_message_id"] = callback.inline_message_id
     challenge["game_type"] = game_type
     title = "Shaxmat" if game_type == "chess" else "Shashka"
-    await edit_message_text(
-        callback.message,
+    await edit_challenge_message(
+        callback,
         f"{title} tanlandi.\nVaqt limitini tanlang:",
         reply_markup=challenge_time_keyboard(challenge_id),
     )
@@ -103,13 +152,15 @@ async def choose_time(callback: CallbackQuery):
         await answer_callback(callback, "Vaqtni faqat yaratuvchi tanlaydi.", show_alert=True)
         return
 
+    if callback.inline_message_id:
+        challenge["inline_message_id"] = callback.inline_message_id
     minutes = int(minutes_text)
     challenge["time_control"] = minutes
     game_name = "shaxmat" if challenge["game_type"] == "chess" else "shashka"
     color_name = "oq" if challenge["creator_color"] == "white" else "qora"
     target_text = f"Raqib: {challenge['target_name']}\n" if challenge.get("target_name") else ""
-    await edit_message_text(
-        callback.message,
+    await edit_challenge_message(
+        callback,
         f"{challenge['creator_name']} {game_name} o'yiniga chaqiryapti.\n"
         f"Yaratuvchi: {color_name}\n"
         f"{target_text}"
@@ -131,7 +182,7 @@ async def cancel_challenge(callback: CallbackQuery):
         await answer_callback(callback, "Challenge'ni faqat yaratuvchi bekor qiladi.", show_alert=True)
         return
     PENDING_CHALLENGES.pop(challenge_id, None)
-    await edit_message_text(callback.message, "Challenge bekor qilindi.")
+    await edit_challenge_message(callback, "Challenge bekor qilindi.")
     await answer_callback(callback)
 
 
@@ -171,7 +222,8 @@ async def accept_challenge(callback: CallbackQuery):
         "black_player": black_player,
         "chat_id": challenge["chat_id"],
         "chat_type": challenge["chat_type"],
-        "message_id": callback.message.message_id,
+        "message_id": None if callback.inline_message_id else callback.message.message_id,
+        "inline_message_id": callback.inline_message_id or challenge.get("inline_message_id"),
         "time_control": minutes,
         "white_time_left": initial_seconds(minutes),
         "black_time_left": initial_seconds(minutes),
@@ -190,5 +242,5 @@ async def accept_challenge(callback: CallbackQuery):
         text = game_text("checkers", game)
 
     PENDING_CHALLENGES.pop(challenge_id, None)
-    await edit_message_text(callback.message, text, reply_markup=markup)
+    await edit_challenge_message(callback, text, reply_markup=markup)
     await answer_callback(callback, "O'yin boshlandi!")

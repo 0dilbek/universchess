@@ -18,8 +18,6 @@ async def set_bot_commands(bot: Bot) -> None:
             BotCommand(command="start", description="Botni ishga tushirish"),
             BotCommand(command="profile", description="Profil va shaxmat statistikasi"),
             BotCommand(command="top", description="Reyting bo'yicha TOP"),
-            BotCommand(command="chesswhite", description="Oq rangda o'yin yaratish"),
-            BotCommand(command="chessblack", description="Qora rangda o'yin yaratish"),
         ]
     )
 
