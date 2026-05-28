@@ -28,15 +28,19 @@ async def init_db():
 
 
 async def ensure_inline_message_columns() -> None:
-    if not Config.DATABASE_URL.startswith("sqlite://"):
-        return
-
     connection = Tortoise.get_connection("default")
+    is_sqlite = Config.DATABASE_URL.startswith("sqlite://")
     for table in ("chessgame", "checkersgame"):
         try:
-            await connection.execute_script(
-                f'ALTER TABLE "{table}" ADD COLUMN "inline_message_id" VARCHAR(255);'
-            )
+            if is_sqlite:
+                await connection.execute_script(
+                    f'ALTER TABLE "{table}" ADD COLUMN "inline_message_id" VARCHAR(255);'
+                )
+            else:
+                await connection.execute_script(
+                    f'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS "inline_message_id" VARCHAR(255);'
+                )
         except Exception as exc:
-            if "duplicate column" not in str(exc).lower():
+            message = str(exc).lower()
+            if "duplicate column" not in message and "already exists" not in message:
                 raise
