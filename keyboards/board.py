@@ -9,18 +9,18 @@ from services.time_control import clock_text, current_time_left
 from services.users import user_mention
 
 CHESS_PIECES = {
-    "P": "♙",
-    "N": "♘",
-    "B": "♗",
-    "R": "♖",
-    "Q": "♕",
-    "K": "♔",
-    "p": "♟",
-    "n": "♞",
-    "b": "♝",
-    "r": "♜",
-    "q": "♛",
-    "k": "♚",
+    "P": "⚪♙",
+    "N": "⚪♘",
+    "B": "⚪♗",
+    "R": "⚪♖",
+    "Q": "⚪♕",
+    "K": "⚪♔",
+    "p": "⚫♟",
+    "n": "⚫♞",
+    "b": "⚫♝",
+    "r": "⚫♜",
+    "q": "⚫♛",
+    "k": "⚫♚",
 }
 CHECKERS_PIECES = {"w": "⚪", "W": "👑", "b": "⚫", "B": "♛"}
 
