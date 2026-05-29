@@ -4,11 +4,13 @@ import chess
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, InlineQuery, InlineQueryResultArticle, InputTextMessageContent, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from keyboards.board import checkers_keyboard, chess_keyboard, game_text
 from keyboards.challenge import accept_keyboard, challenge_time_keyboard, challenge_type_keyboard
 from models.board_game import CheckersGame, ChessGame
 from models.user import User
+from config import ShaxmatEmojies
 from services import checkers
 from services.telegram_safe import answer_callback, answer_message, edit_bot_message_text, edit_message_text
 from services.time_control import increment_for, initial_seconds, utc_now
@@ -68,6 +70,25 @@ async def create_challenge(message: Message):
         "keyin oq yoki qora bo'lib boshlash variantini tanlang."
     )
     return
+
+
+@router.message(Command("emojitest"))
+async def emoji_test(message: Message):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(
+        text=".",
+        callback_data="bg:noop",
+        icon_custom_emoji_id=str(ShaxmatEmojies.WHITE_QIROL),
+        style="success",
+    )
+    keyboard.button(
+        text=".",
+        callback_data="bg:noop",
+        icon_custom_emoji_id=str(ShaxmatEmojies.BLACK_QIROL),
+        style="danger",
+    )
+    keyboard.adjust(2)
+    await answer_message(message, "Custom emoji direct-message testi:", reply_markup=keyboard.as_markup())
 
 
 @router.inline_query()
