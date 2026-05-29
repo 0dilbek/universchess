@@ -62,15 +62,27 @@ def chess_square_style(square: chess.Square) -> str:
     return "success" if (file_index + rank_index) % 2 else "danger"
 
 
-def chess_square_text(board: chess.Board, square: chess.Square, square_name: str, selected: str | None, targets: set[str]) -> str:
+def chess_square_text(
+    board: chess.Board,
+    square: chess.Square,
+    square_name: str,
+    selected: str | None,
+    targets: set[str],
+    use_custom_emoji: bool,
+) -> str:
     piece = board.piece_at(square)
-    base = CHESS_ICON_PLACEHOLDER if piece else "•" if square_name in targets else " "
+    if piece:
+        base = CHESS_ICON_PLACEHOLDER if use_custom_emoji else CHESS_PIECES[piece.symbol()]
+    else:
+        base = "•" if square_name in targets else " "
     if square_name == selected:
-        return "🔸"
+        return "🔸" if use_custom_emoji else f"🔸{base}"
     return base
 
 
-def chess_piece_icon(board: chess.Board, square: chess.Square) -> str | None:
+def chess_piece_icon(board: chess.Board, square: chess.Square, use_custom_emoji: bool) -> str | None:
+    if not use_custom_emoji:
+        return None
     piece = board.piece_at(square)
     if not piece:
         return None
@@ -84,12 +96,13 @@ def add_chess_square_button(
     selected: str | None,
     targets: set[str],
     callback: str,
+    use_custom_emoji: bool,
 ) -> None:
     name = chess.square_name(square)
     keyboard.button(
-        text=chess_square_text(board, square, name, selected, targets),
+        text=chess_square_text(board, square, name, selected, targets, use_custom_emoji),
         callback_data=callback,
-        icon_custom_emoji_id=chess_piece_icon(board, square),
+        icon_custom_emoji_id=chess_piece_icon(board, square, use_custom_emoji),
         style=chess_square_style(square),
     )
 
@@ -98,6 +111,7 @@ def chess_keyboard(game: ChessGame, result_text: str | None = None):
     board = chess.Board(game.fen)
     keyboard = InlineKeyboardBuilder()
     selected = game.selected_square
+    use_custom_emoji = not bool(game.inline_message_id)
     targets = {
         chess.square_name(move.to_square)
         for move in board.legal_moves
@@ -112,7 +126,7 @@ def chess_keyboard(game: ChessGame, result_text: str | None = None):
                 callback = f"bg:move:chess:{game.id}:{selected}:{name}"
             else:
                 callback = f"bg:sel:chess:{game.id}:{name}"
-            add_chess_square_button(keyboard, board, square, selected, targets, callback)
+            add_chess_square_button(keyboard, board, square, selected, targets, callback, use_custom_emoji)
     action_buttons(keyboard, "chess", game.id, game, result_text)
     return keyboard.as_markup()
 
