@@ -3,6 +3,14 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from constants import TIME_OPTIONS
 
 
+def challenge_color_keyboard(challenge_id: str):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.button(text="⚪ Oq", callback_data=f"bg:color:{challenge_id}:white")
+    keyboard.button(text="⚫ Qora", callback_data=f"bg:color:{challenge_id}:black")
+    keyboard.adjust(2)
+    return keyboard.as_markup()
+
+
 def challenge_type_keyboard(challenge_id: str):
     keyboard = InlineKeyboardBuilder()
     keyboard.button(text="♟ Shaxmat", callback_data=f"bg:type:{challenge_id}:chess")

@@ -16,6 +16,7 @@ async def set_bot_commands(bot: Bot) -> None:
     await bot.set_my_commands(
         [
             BotCommand(command="start", description="Botni ishga tushirish"),
+            BotCommand(command="chess", description="Shaxmat o'yini yaratish"),
             BotCommand(command="profile", description="Profil va shaxmat statistikasi"),
             BotCommand(command="top", description="Reyting bo'yicha TOP"),
         ]
