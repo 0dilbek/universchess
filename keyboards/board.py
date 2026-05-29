@@ -38,7 +38,7 @@ CHESS_PIECES = {
     "k": "♚",
 }
 CHECKERS_PIECES = {"w": "⚪", "W": "👑", "b": "⚫", "B": "♛"}
-CHESS_ICON_PLACEHOLDER = "·"
+CHESS_ICON_PLACEHOLDER = "."
 
 
 def action_buttons(keyboard: InlineKeyboardBuilder, game_type: str, game_id: int, game, result_text: str | None = None):
