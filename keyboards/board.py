@@ -2,12 +2,27 @@ import chess
 from aiogram.types import CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from config import ShaxmatEmojies
 from models.board_game import CheckersGame, ChessGame
 from services import checkers
 from services.telegram_safe import edit_bot_message_text, edit_message_text
 from services.time_control import clock_text, current_time_left
 from services.users import user_mention
 
+CHESS_CUSTOM_EMOJI_IDS = {
+    "P": ShaxmatEmojies.WHITE_PIYODA,
+    "N": ShaxmatEmojies.WHITE_OT,
+    "B": ShaxmatEmojies.WHITE_FIL,
+    "R": ShaxmatEmojies.WHITE_RUH,
+    "Q": ShaxmatEmojies.WHITE_FARZIN,
+    "K": ShaxmatEmojies.WHITE_QIROL,
+    "p": ShaxmatEmojies.BLACK_PIYODA,
+    "n": ShaxmatEmojies.BLACK_OT,
+    "b": ShaxmatEmojies.BLACK_FIL,
+    "r": ShaxmatEmojies.BLACK_RUH,
+    "q": ShaxmatEmojies.BLACK_FARZIN,
+    "k": ShaxmatEmojies.BLACK_QIROL,
+}
 CHESS_PIECES = {
     "P": "♙",
     "N": "♘",
@@ -23,6 +38,7 @@ CHESS_PIECES = {
     "k": "♚",
 }
 CHECKERS_PIECES = {"w": "⚪", "W": "👑", "b": "⚫", "B": "♛"}
+CHESS_ICON_PLACEHOLDER = "·"
 
 
 def action_buttons(keyboard: InlineKeyboardBuilder, game_type: str, game_id: int, game, result_text: str | None = None):
@@ -48,10 +64,17 @@ def chess_square_style(square: chess.Square) -> str:
 
 def chess_square_text(board: chess.Board, square: chess.Square, square_name: str, selected: str | None, targets: set[str]) -> str:
     piece = board.piece_at(square)
-    base = CHESS_PIECES[piece.symbol()] if piece else "•" if square_name in targets else " "
+    base = CHESS_ICON_PLACEHOLDER if piece else "•" if square_name in targets else " "
     if square_name == selected:
-        return f"🔸{base}"
+        return "🔸"
     return base
+
+
+def chess_piece_icon(board: chess.Board, square: chess.Square) -> str | None:
+    piece = board.piece_at(square)
+    if not piece:
+        return None
+    return str(CHESS_CUSTOM_EMOJI_IDS[piece.symbol()])
 
 
 def add_chess_square_button(
@@ -66,6 +89,7 @@ def add_chess_square_button(
     keyboard.button(
         text=chess_square_text(board, square, name, selected, targets),
         callback_data=callback,
+        icon_custom_emoji_id=chess_piece_icon(board, square),
         style=chess_square_style(square),
     )
 
